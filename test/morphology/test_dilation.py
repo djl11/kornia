@@ -1,67 +1,104 @@
+import ivy
 import pytest
-import torch
-from kornia.morphology.basic_operators import _se_to_mask, dilation
-import kornia.testing as utils  # test utils
+import ivy.torch
+import numpy as np
+from ivy_tests import helpers
+helpers.exclude(['mxnd', 'mxsym'])
+# noinspection PyProtectedMember
 from torch.autograd import gradcheck
-from torch.testing import assert_allclose
+# noinspection PyProtectedMember
+from kornia.morphology.basic_operators import _se_to_mask, dilation
 
 
-class TestDilate():
+class TestDilate:
 
     def test_smoke(self, device, dtype):
-        kernel = torch.rand(3, 3, device=device, dtype=dtype)
-        assert _se_to_mask(kernel) is not None
+        dtype_str = ivy.torch.dtype_to_str(dtype)
+        dev_str = ivy.torch.dev_to_str(device)
+        for f, call in helpers.calls():
+            with f.use:
+                kernel = f.cast(f.random_uniform(shape=(3, 3), dev=dev_str), dtype_str)
+                assert call(_se_to_mask, kernel) is not None
 
     @pytest.mark.parametrize(
         "shape", [(1, 3, 4, 4), (2, 3, 2, 4), (3, 3, 4, 1), (3, 2, 5, 5)])
     @pytest.mark.parametrize(
         "kernel", [(3, 3), (5, 5)])
     def test_cardinality(self, device, dtype, shape, kernel):
-        img = torch.ones(shape, device=device, dtype=dtype)
-        krnl = torch.ones(kernel, device=device, dtype=dtype)
-        assert dilation(img, krnl).shape == shape
+        dtype_str = ivy.torch.dtype_to_str(dtype)
+        dev_str = ivy.torch.dev_to_str(device)
+        for f, call in helpers.calls():
+            with f.use:
+                img = ivy.ones(shape, dtype_str=dtype_str, dev=dev_str)
+                krnl = ivy.ones(kernel, dtype_str=dtype_str, dev=dev_str)
+                assert dilation(img, krnl).shape == shape
 
     def test_value(self, device, dtype):
-        input = torch.tensor([[0.5, 1., 0.3], [0.7, 0.3, 0.8], [0.4, 0.9, 0.2]],
-                             device=device, dtype=dtype)[None, None, :, :]
-        kernel = torch.tensor([[0., 1., 0.], [1., 1., 1.], [0., 1., 0.]], device=device, dtype=dtype)
-        expected = torch.tensor([[1., 1., 1.], [0.7, 1., 0.8], [0.9, 0.9, 0.9]],
-                                device=device, dtype=dtype)[None, None, :, :]
-        assert_allclose(dilation(input, kernel), expected)
+        dtype_str = ivy.torch.dtype_to_str(dtype)
+        dev_str = ivy.torch.dev_to_str(device)
+        for f, call in helpers.calls():
+            with f.use:
+                input_ = ivy.array([[0.5, 1., 0.3], [0.7, 0.3, 0.8], [0.4, 0.9, 0.2]],
+                                   dev=dev_str, dtype_str=dtype_str)[None, None, :, :]
+                kernel = ivy.array([[0., 1., 0.], [1., 1., 1.], [0., 1., 0.]], dev=dev_str, dtype_str=dtype_str)
+                expected = np.array([[1., 1., 1.], [0.7, 1., 0.8], [0.9, 0.9, 0.9]])[None, None, :, :]
+                assert np.allclose(call(dilation, input_, kernel), expected)
 
     def test_exception(self, device, dtype):
-        input = torch.ones(1, 1, 3, 4, device=device, dtype=dtype)
-        kernel = torch.ones(3, 3, device=device, dtype=dtype)
+        dtype_str = ivy.torch.dtype_to_str(dtype)
+        dev_str = ivy.torch.dev_to_str(device)
+        for f, call in helpers.calls():
+            with f.use:
+                input_ = ivy.ones((1, 1, 3, 4), dev=dev_str, dtype_str=dtype_str)
+                kernel = ivy.ones((3, 3), dev=dev_str, dtype_str=dtype_str)
 
-        with pytest.raises(TypeError):
-            assert dilation([0.], kernel)
+                with pytest.raises(ValueError):
+                    test = ivy.ones((2, 3, 4), dev=dev_str, dtype_str=dtype_str)
+                    assert dilation(test, kernel)
 
-        with pytest.raises(TypeError):
-            assert dilation(input, [0.])
+                with pytest.raises(ValueError):
+                    test = ivy.ones((2, 3, 4), dev=dev_str, dtype_str=dtype_str)
+                    assert dilation(input_, test)
 
-        with pytest.raises(ValueError):
-            test = torch.ones(2, 3, 4, device=device, dtype=dtype)
-            assert dilation(test, kernel)
+                if call is not helpers.torch_call:
+                    continue
 
-        with pytest.raises(ValueError):
-            test = torch.ones(2, 3, 4, device=device, dtype=dtype)
-            assert dilation(input, test)
+                with pytest.raises(TypeError):
+                    assert dilation([0.], kernel)
+
+                with pytest.raises(TypeError):
+                    assert dilation(input_, [0.])
 
     @pytest.mark.grad
     def test_gradcheck(self, device, dtype):
-        input = torch.rand(2, 3, 4, 4, requires_grad=True, device=device, dtype=torch.float64)
-        kernel = torch.rand(3, 3, requires_grad=True, device=device, dtype=torch.float64)
-        assert gradcheck(dilation, (input, kernel), raise_exception=True)
+        dtype_str = ivy.torch.dtype_to_str(dtype)
+        dev_str = ivy.torch.dev_to_str(device)
+        for f, call in helpers.calls():
+            if call is not helpers.torch_call:
+                # ivy gradcheck method not yet implemented
+                continue
+            with f.use:
+                input_ = ivy.variable(ivy.cast(ivy.random_uniform(shape=(2, 3, 4, 4), dev=dev_str), 'float64'))
+                kernel = ivy.variable(ivy.cast(ivy.random_uniform(shape=(3, 3), dev=dev_str), 'float64'))
+                assert gradcheck(dilation, (input_, kernel), raise_exception=True)
 
     @pytest.mark.jit
     def test_jit(self, device, dtype):
         op = dilation
-        op_script = torch.jit.script(op)
+        dtype_str = ivy.torch.dtype_to_str(dtype)
+        dev_str = ivy.torch.dev_to_str(device)
+        for f, call in helpers.calls():
+            if call in [helpers.jnp_call, helpers.torch_call]:
+                # compiled jax tensors do not have device_buffer attribute, preventing device info retrieval,
+                # pytorch scripting does not support .type() casting, nor Union or Numbers for type hinting
+                continue
+            with f.use:
+                op_compiled = ivy.compile_fn(op)
 
-        input = torch.rand(1, 2, 7, 7, device=device, dtype=dtype)
-        kernel = torch.ones(3, 3, device=device, dtype=dtype)
+                input_ = ivy.cast(ivy.random_uniform(shape=(1, 2, 7, 7), dev=dev_str), dtype_str)
+                kernel = ivy.ones((3, 3), dev=dev_str, dtype_str=dtype_str)
 
-        actual = op_script(input, kernel)
-        expected = op(input, kernel)
+                actual = call(op_compiled, input_, kernel)
+                expected = call(op, input_, kernel)
 
-        assert_allclose(actual, expected)
+                assert np.allclose(actual, expected)
