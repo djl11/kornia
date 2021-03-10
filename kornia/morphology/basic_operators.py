@@ -7,7 +7,7 @@ def _se_to_mask(se: ivy.Tensor) -> ivy.Tensor:
     se_h, se_w = se.shape
     se_flat = ivy.reshape(se, (-1,))
     num_feats = se_h * se_w
-    i_s = ivy.expand_dims(ivy.arange(num_feats), -1)
+    i_s = ivy.expand_dims(ivy.arange(num_feats, dev=ivy.dev_str(se)), -1)
     y_s = i_s % se_h
     x_s = i_s // se_h
     indices = ivy.concatenate((i_s, ivy.zeros_like(i_s, dtype_str='int32'), x_s, y_s), -1)
