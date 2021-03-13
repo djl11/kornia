@@ -4,17 +4,17 @@ from kornia.morphology.basic_operators import dilation, erosion
 
 # open
 # noinspection PyShadowingBuiltins,PyShadowingNames
-def open(tensor: ivy.Tensor, kernel: ivy.Tensor) -> ivy.Tensor:
+def open(tensor: ivy.Array, kernel: ivy.Array) -> ivy.Array:
     r"""Returns the opened image, (that means, erosion after a dilation) applying the same kernel in each channel.
 
     The kernel must have 2 dimensions, each one defined by an odd number.
 
     Args:
-       tensor (ivy.Tensor): Image with shape :math:`(B, C, H, W)`.
-       kernel (ivy.Tensor): Structuring element with shape :math:`(H, W)`.
+       tensor (ivy.Array): Image with shape :math:`(B, C, H, W)`.
+       kernel (ivy.Array): Structuring element with shape :math:`(H, W)`.
 
     Returns:
-       ivy.Tensor: Dilated image with shape :math:`(B, C, H, W)`.
+       ivy.Array: Dilated image with shape :math:`(B, C, H, W)`.
 
     Example:
         >>> tensor = ivy.random_uniform(shape=(1, 3, 5, 5))
@@ -22,16 +22,16 @@ def open(tensor: ivy.Tensor, kernel: ivy.Tensor) -> ivy.Tensor:
         >>> opened_img = open(tensor, kernel)
     """
 
-    if ivy.backend == 'torch' and not isinstance(tensor, ivy.Tensor):
-        raise TypeError("Input type is not a ivy.Tensor. Got {}".format(
+    if ivy.backend == 'torch' and not isinstance(tensor, ivy.Array):
+        raise TypeError("Input type is not a ivy.Array. Got {}".format(
             type(tensor)))
 
     if len(tensor.shape) != 4:
         raise ValueError("Input size must have 4 dimensions. Got {}".format(
             ivy.get_num_dims(tensor)))
 
-    if ivy.backend == 'torch' and not isinstance(kernel, ivy.Tensor):
-        raise TypeError("Kernel type is not a ivy.Tensor. Got {}".format(
+    if ivy.backend == 'torch' and not isinstance(kernel, ivy.Array):
+        raise TypeError("Kernel type is not a ivy.Array. Got {}".format(
             type(kernel)))
 
     if len(kernel.shape) != 2:
@@ -43,17 +43,17 @@ def open(tensor: ivy.Tensor, kernel: ivy.Tensor) -> ivy.Tensor:
 
 # close
 # noinspection PyShadowingNames
-def close(tensor: ivy.Tensor, kernel: ivy.Tensor) -> ivy.Tensor:
+def close(tensor: ivy.Array, kernel: ivy.Array) -> ivy.Array:
     r"""Returns the closed image, (that means, dilation after an erosion) applying the same kernel in each channel.
 
     The kernel must have 2 dimensions, each one defined by an odd number.
 
     Args:
-       tensor (ivy.Tensor): Image with shape :math:`(B, C, H, W)`.
-       kernel (ivy.Tensor): Structuring element with shape :math:`(H, W)`.
+       tensor (ivy.Array): Image with shape :math:`(B, C, H, W)`.
+       kernel (ivy.Array): Structuring element with shape :math:`(H, W)`.
 
     Returns:
-       ivy.Tensor: Dilated image with shape :math:`(B, C, H, W)`.
+       ivy.Array: Dilated image with shape :math:`(B, C, H, W)`.
 
     Example:
         >>> tensor = ivy.random_uniform(shape=(1, 3, 5, 5))
@@ -61,16 +61,16 @@ def close(tensor: ivy.Tensor, kernel: ivy.Tensor) -> ivy.Tensor:
         >>> closed_img = close(tensor, kernel)
     """
 
-    if ivy.backend == 'torch' and not isinstance(tensor, ivy.Tensor):
-        raise TypeError("Input type is not a ivy.Tensor. Got {}".format(
+    if ivy.backend == 'torch' and not isinstance(tensor, ivy.Array):
+        raise TypeError("Input type is not a ivy.Array. Got {}".format(
             type(tensor)))
 
     if len(tensor.shape) != 4:
         raise ValueError("Input size must have 4 dimensions. Got {}".format(
             ivy.get_num_dims(tensor)))
 
-    if ivy.backend == 'torch' and not isinstance(kernel, ivy.Tensor):
-        raise TypeError("Kernel type is not a ivy.Tensor. Got {}".format(
+    if ivy.backend == 'torch' and not isinstance(kernel, ivy.Array):
+        raise TypeError("Kernel type is not a ivy.Array. Got {}".format(
             type(kernel)))
 
     if len(kernel.shape) != 2:
